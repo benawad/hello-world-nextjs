@@ -16,10 +16,29 @@ if (!process.browser) {
 }
 
 function create(headers, initialState, ni) {
+  let networkInterface = ni;
+  if (!ni) {
+    networkInterface = createNetworkInterface({ uri })
+    networkInterface.use([{
+      applyMiddleware(req, next) {
+        if (!req.options.headers) {
+          req.options.headers = {};
+        }
+        console.log('middleware called! 1');
+        // if (apolloClient) {
+        //   req.options.headers['x-token'] = localStorage.getItem('token');
+        //   req.options.headers['x-refresh-token'] = localStorage.getItem('refreshToken');
+        // }
+
+        next();
+      }
+    }]);
+  }
+
   return new ApolloClient({
     initialState,
     ssrMode: !process.browser, // Disables forceFetch on the server (so queries are only run once)
-    networkInterface: ni || createNetworkInterface({ uri })
+    networkInterface,
   });
 }
 
@@ -38,6 +57,22 @@ export default function initApollo(headers, initialState = {}) {
     const networkInterface = createNetworkInterface({
       uri
     });
+
+    networkInterface.use([{
+      applyMiddleware(req, next) {
+        if (!req.options.headers) {
+          req.options.headers = {};
+        }
+        console.log('middleware called! 2');
+        // if (apolloClient) {
+        //   req.options.headers['x-token'] = localStorage.getItem('token');
+        //   req.options.headers['x-refresh-token'] = localStorage.getItem('refreshToken');
+        // }
+
+        next();
+      }
+    }]);
+
     const networkInterfaceWithSubscriptions = addGraphQLSubscriptions(
       networkInterface,
       wsClient
